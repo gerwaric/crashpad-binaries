@@ -14,7 +14,7 @@ else()
 endif()
 
 if(NOT DEFINED crashpad_SOURCE_DIR)
-    set(_crashpad_base "${CMAKE_OURCE_DIR}")
+    set(_crashpad_base "${CMAKE_SOURCE_DIR}")
 else()
     set(_crashpad_base "${crashpad_SOURCE_DIR}")
 endif()

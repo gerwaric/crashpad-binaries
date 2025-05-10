@@ -10,7 +10,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="${SCRIPT_DIR}/.."
 BUILD_DIR="${ROOT_DIR}/build"
 OUT_DIR="${BUILD_DIR}/out"
-OBJ_DIR="${BUILD_DIR}/obj"
 
 DEPOT_TOOLS_URL="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
 DEPOT_TOOLS_DIR="${BUILD_DIR}/depot_tools"

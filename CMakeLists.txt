@@ -13,6 +13,12 @@ else()
     message(FATAL_ERROR "Crashpad: unsupported platform: ${CMAKE_SYSTEM_NAME}")
 endif()
 
+if(NOT DEFINED crashpad_SOURCE_DIR)
+    set(_crashpad_base "${CMAKE_OURCE_DIR}")
+else()
+    set(_crashpad_base "${crashpad_SOURCE_DIR}")
+endif()
+
 add_library(crashpad INTERFACE)
 target_link_libraries(crashpad INTERFACE
     crashpad::client
@@ -23,25 +29,25 @@ target_link_libraries(crashpad INTERFACE
 
 add_library(crashpad::client STATIC IMPORTED)
 set_target_properties(crashpad::client PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/${_crashpad_platform}/libclient.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/include"
+    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libclient.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
 )
 
 add_library(crashpad::common STATIC IMPORTED)
 set_target_properties(crashpad::common PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/${_crashpad_platform}/libcommon.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/include"
+    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libcommon.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
 )
 
 add_library(crashpad::util STATIC IMPORTED)
 set_target_properties(crashpad::util PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/${_crashpad_platform}/libutil.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/include"
+    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libutil.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
 )
 
 add_library(mini_chromium::base STATIC IMPORTED)
 set_target_properties(mini_chromium::base PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/${_crashpad_platform}/libbase.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/include"
+    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libbase.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
 )
 

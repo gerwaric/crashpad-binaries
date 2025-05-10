@@ -11,8 +11,8 @@ else()
     message(FATAL_ERROR "Crashpad: unsupported platform: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-add_library(crashpad INTERFACE)
-target_link_libraries(crashpad INTERFACE
+add_library(crashpad::binaries INTERFACE)
+target_link_libraries(crashpad::binaries INTERFACE
     crashpad::client
     crashpad::common
     crashpad::util

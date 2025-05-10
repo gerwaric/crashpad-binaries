@@ -32,6 +32,9 @@ set_target_properties(crashpad::client PROPERTIES
     IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libclient.a"
     INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
 )
+target_link_libraries(crashpad::client INTERFACE
+    mini_chromium::base
+)
 
 add_library(crashpad::common STATIC IMPORTED)
 set_target_properties(crashpad::common PROPERTIES

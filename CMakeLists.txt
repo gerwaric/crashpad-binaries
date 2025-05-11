@@ -19,7 +19,7 @@ else()
     set(_crashpad_base "${crashpad_SOURCE_DIR}")
 endif()
 
-add_library(crashpad-binaries INTERFACE)
+add_library(crashpad::binaries INTERFACE)
 target_link_libraries(crashpad::binaries INTERFACE
     crashpad::binaries::client
     crashpad::binaries::common

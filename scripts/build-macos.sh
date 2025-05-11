@@ -17,11 +17,6 @@ DEPOT_TOOLS_DIR="${BUILD_DIR}/depot_tools"
 INCLUDE_DIR="${ROOT_DIR}/include/"
 LIB_DIR="${ROOT_DIR}/lib/macOS"
 
-# Step 2: Fetch Crashpad source
-if [ ! -d "${BUILD_DIR}" ]; then
-    mkdir -p "${BUILD_DIR}"
-fi
-
 # Step 1: Set up depot_tools
 if [ ! -d "${DEPOT_TOOLS_DIR}" ]; then
     echo "Installing depot_tools..."
@@ -53,14 +48,22 @@ cp "${OUT_DIR}/obj/util/libutil.a" "${LIB_DIR}"
 cp "${OUT_DIR}/obj/third_party/mini_chromium/mini_chromium/base/libbase.a" "${LIB_DIR}"
 
 # Step 3: Copy headers
+
 echo "Installing client headers..."
 rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
     "${BUILD_DIR}/crashpad/client/" \
     "${INCLUDE_DIR}/crashpad/client/"
+
+echo "Installing handler headers..."
+rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
+    "${BUILD_DIR}/crashpad/handler/" \
+    "${INCLUDE_DIR}/crashpad/handler/"
+
 echo "Installing util headers..."
 rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
     "${BUILD_DIR}/crashpad/util/" \
     "${INCLUDE_DIR}/crashpad/util/"
+
 echo "Installing mini_chromium headers..."
 rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
     "${BUILD_DIR}/crashpad/third_party/mini_chromium/mini_chromium/base" \

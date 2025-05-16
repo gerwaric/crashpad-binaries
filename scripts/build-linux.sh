@@ -1,71 +1,102 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-ROOT_DIR="${SCRIPT_DIR}/.."
-BUILD_DIR="${ROOT_DIR}/build"
-OUT_DIR="${BUILD_DIR}/out/Default"
-
-DEPOT_TOOLS_URL="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
-DEPOT_TOOLS_DIR="${BUILD_DIR}/depot_tools"
-
-INCLUDE_DIR="${ROOT_DIR}/include/"
-LIB_DIR="${ROOT_DIR}/lib/Linux"
-
-# Step 2: Fetch Crashpad source
-if [ ! -d "${BUILD_DIR}" ]; then
-    mkdir -p "${BUILD_DIR}"
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "This script must be run on Linux." >&2
+    exit 1
 fi
 
-# Step 1: Set up depot_tools
-if [ ! -d "${DEPOT_TOOLS_DIR}" ]; then
-    echo "Installing depot_tools..."
-    mkdir -p "${DEPOT_TOOLS_DIR}"
-    git clone "${DEPOT_TOOLS_URL}" "${DEPOT_TOOLS_DIR}"
-fi
-export PATH="${DEPOT_TOOLS_DIR}${PATH+:${PATH}}"
+#=== Resolve root and paths ===
+SCRIPT_DIR=$( cd -- "$( dirname -- "$BASH_SOURCE[0]" )" &> /dev/null && pwd )
+ROOT_DIR="$SCRIPT_DIR/.."
+echo "[INFO] Root dir is \"$ROOT_DIR\""
+DEPOT_TOOLS_DIR="$ROOT_DIR/build/depot_tools"
+CRASHPAD_BUILD_DIR="$ROOT_DIR/build/crashpad"
 
-# Step 2: Fetch Crashpad source
-if [ ! -d "${BUILD_DIR}/crashpad" ]; then
-    echo "Fetching Crashpad source..."
-    cd "${BUILD_DIR}"
+#=== Setup depot_tools ===
+if [ ! -f "$DEPOT_TOOLS_DIR/gclient.py" ]; then
+    echo "[INFO] Installing depot_tools..."
+    mkdir -p "$DEPOT_TOOLS_DIR"
+    git clone "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "$DEPOT_TOOLS_DIR"
+fi
+export PATH="$DEPOT_TOOLS_DIR${PATH+:$PATH}"
+
+#=== Fetch crashpad ===
+if [ ! -d "$CRASHPAD_BUILD_DIR/crashpad" ]; then
+    echo "[INFO] Fetching Crashpad..."
+    mkdir -p "$CRASHPAD_BUILD_DIR"
+    cd "$CRASHPAD_BUILD_DIR"
     fetch crashpad
+else
+    echo "[INFO] Syncing Crashpad..."
+    cd "$CRASHPAD_BUILD_DIR/crashpad"
+    gclient sync
 fi
 
-# Step 3: Build Crashpad
-echo "Building Crashpad..."
-cd "${BUILD_DIR}/crashpad"
-gn gen "${OUT_DIR}"
-ninja -C "${OUT_DIR}"
+#== Build crashpad ===
+cd "$CRASHPAD_BUILD_DIR/crashpad"
+for config in release debug; do
 
-# Step 4: Build the combined output library
-echo "Creating the library..."
-if [ ! -d "${BUILD_DIR}/libobj" ]; then
-    mkdir -p "${BUILD_DIR}/libobj"
+    if [[ "$config" == "debug" ]]; then
+        is_debug=true
+    else
+        is_debug=false
+    fi
+
+    # Generate build
+    echo "[INFO] Generating $config build..."
+    gn gen "out/$config" --args="is_debug=$is_debug"
+
+    # Build release
+    echo "[INFO] Building $config..."
+    ninja -C "out/$config"
+
+    # Copy libraries
+    destination="$ROOT_DIR/lib/linux/$config"
+    if [ ! -d "$destination" ]; then
+        mkdir -p "$destination"
+    fi
+
+    echo "[INFO] Copying client/libclient.a to \"$destination\""
+    cp "out/$config/obj/client/libclient.a" "$destination"
+
+    echo "[INFO] Copying client/libcommon.a to \"$destination\""
+    cp "out/$config/obj/client/libcommon.a" "$destination"
+
+    echo "[INFO] Copying util/libutil.a to \"$destination\""
+    cp "out/$config/obj/util/libutil.a" "$destination"
+
+    echo "[INFO] Copying mini_chromium/base/libbase.a to \"$destination\""
+    cp "out/$config/obj/third_party/mini_chromium/mini_chromium/base/libbase.a" "$destination"
+
+done
+
+#=== Copy crashpad headers ===
+echo "[INFO] Installing client headers..."
+rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
+    "$ROOT_DIR/build/crashpad/crashpad/client/" \
+    "$ROOT_DIR/include/crashpad/client/"
+echo "[INFO] Installing handler headers..."
+rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
+    "$ROOT_DIR/build/crashpad/crashpad/handler/" \
+    "$ROOT_DIR/include/crashpad/handler/"
+echo "[INFO] Installing util headers..."
+rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
+    "$ROOT_DIR/build/crashpad/crashpad/util/" \
+    "$ROOT_DIR/include/crashpad/util/"
+
+#=== Copy mini_chromium headers ===
+echo "[INFO] Installing mini_chromium headers..."
+rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
+    "$ROOT_DIR/build/crashpad/crashpad/third_party/mini_chromium/mini_chromium/" \
+    "$ROOT_DIR/include/mini_chromium/"
+
+#=== Copy crashpad_handler executable ===
+if [ ! -d "$ROOT_DIR/bin/linux" ]; then
+    mkdir -p "$ROOT_DIR/bin/linux"
 fi
-cd "${BUILD_DIR}/libobj"
-ar x "${OUT_DIR}/obj/client/libclient.a"
-ar x "${OUT_DIR}/obj/client/libcommon.a"
-ar x "${OUT_DIR}/obj/util/libutil.a"
-ar x "${OUT_DIR}/obj/third_party/mini_chromium/mini_chromium/base/libbase.a"
+echo "[INFO] Copying crashpad_handler executable..."
+cp  "$ROOT_DIR/build/crashpad/crashpad/out/release/crashpad_handler" \
+    "$ROOT_DIR/bin/linux/"
 
-# Copy the newly created library
-echo "Installing the library..."
-if [ ! -d "${LIB_DIR}" ]; then
-    mkdir -p "${LIB_DIR}"
-fi
-ar rcs "${LIB_DIR}/libcrashpad.a" *.o
-
-# Step 3: Copy headers
-echo "Installing client headers..."
-rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
-    "${BUILD_DIR}/crashpad/client/" \
-    "${INCLUDE_DIR}/crashpad/client/"
-echo "Installing util headers..."
-rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
-    "${BUILD_DIR}/crashpad/util/" \
-    "${INCLUDE_DIR}/crashpad/util/"
-echo "Installing mini_chromium headers..."
-rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
-    "${BUILD_DIR}/crashpad/third_party/mini_chromium/mini_chromium/base" \
-    "${INCLUDE_DIR}/crashpad/third_party/mini_chromium/base"
+echo "[INFO] Done."

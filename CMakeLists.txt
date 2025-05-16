@@ -44,9 +44,9 @@ target_link_libraries(crashpad INTERFACE
     crashpad::util
     crashpad::base
 )
-#set_target_properties(crashpad PROPERTIES
-#    INTERFACE_INCLUDE_DIRECTORIES "${crashpad_include}/crashpad;${crashpad_include}/mini_chromium"
-#)
+set_target_properties(crashpad PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${crashpad_include}/crashpad;${crashpad_include}/mini_chromium"
+)
 
 # Add Advapi32 for Windows
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

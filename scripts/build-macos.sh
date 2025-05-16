@@ -68,3 +68,11 @@ echo "Installing mini_chromium headers..."
 rsync -a --delete --include='*/' --include='*.h' --include='*.hpp' --exclude='*' \
     "${BUILD_DIR}/crashpad/third_party/mini_chromium/mini_chromium/base" \
     "${INCLUDE_DIR}/mini_chromium/base"
+
+REM === Copy crashpad_handler executable ===
+echo [INFO] Copying crashpad_handler executable...
+mkdir "%~dp0bin\windows" >nul 2>&1
+copy "%CRASHPAD_BUILD%\crashpad_handler.exe" "%~dp0bin\windows\" || (
+    echo [ERROR] crashpad_handler.exe not found!
+    exit /b 1
+)

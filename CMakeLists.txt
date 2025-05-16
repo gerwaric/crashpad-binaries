@@ -2,55 +2,96 @@ cmake_minimum_required(VERSION 3.15)
 
 project(crashpad NONE)  # No real build, just define targets
 
-# Figure out platform
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+#set(crashpad_root "${CMAKE_CURRENT_LIST_DIR}")
+
+# Determine the platform
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(_crashpad_platform "Linux")
+    set(platform "linux")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(_crashpad_platform "macOS")
+    set(platform "macos")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(_crashpad_platform "Windows")
+    set(platform "windows")
 else()
     message(FATAL_ERROR "Crashpad: unsupported platform: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-if(NOT DEFINED crashpad_SOURCE_DIR)
-    set(_crashpad_base "${CMAKE_SOURCE_DIR}")
+# Setup paths
+set(platform_bin "${CMAKE_CURRENT_LIST_DIR}/bin/${platform}")
+set(platform_lib "${CMAKE_CURRENT_LIST_DIR}/lib/${platform}")
+set(crashpad_include "${CMAKE_CURRENT_LIST_DIR}/include")
+
+# Set the name of the crashpad_handler program
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(crashpad_handler "crashpad_handler.exe")
 else()
-    set(_crashpad_base "${crashpad_SOURCE_DIR}")
+    set(crashpad_handler "crashpad_handler")
 endif()
 
-add_library(crashpad::binaries INTERFACE)
-target_link_libraries(crashpad::binaries INTERFACE
-    crashpad::binaries::client
-    crashpad::binaries::common
-    crashpad::binaries::util
-    crashpadbinaries::mini_chromium::base
+# Add the crashpad_handler as a global target
+add_executable(crashpad::handler IMPORTED GLOBAL)
+set_target_properties(crashpad::handler PROPERTIES
+    IMPORTED_LOCATION "${platform_bin}/${crashpad_handler}"
 )
 
-add_library(crashpad::binaries::client STATIC IMPORTED)
-set_target_properties(crashpad::binaries::client PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libclient.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
+# Add the crashpad library as an interface target
+add_library(crashpad INTERFACE)
+target_link_libraries(crashpad INTERFACE
+    crashpad::client
+    crashpad::common
+    crashpad::util
+    crashpad::base
 )
-target_link_libraries(crashpad::binaries::client INTERFACE
-    crashpad::binaries::mini_chromium::base
+#set_target_properties(crashpad PROPERTIES
+#    INTERFACE_INCLUDE_DIRECTORIES "${crashpad_include}/crashpad;${crashpad_include}/mini_chromium"
+#)
+
+# Add Advapi32 for Windows
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(crashpad INTERFACE Advapi32)
+endif()
+
+# Add each of the crashpad::* library targets
+foreach(name IN ITEMS client common util base)
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(lib_release "MD/${name}.lib")
+        set(lib_debug "MDd/${name}.lib")
+    else()
+        set(lib_release "lib${name}.a")
+        set(lib_debug "lib${name}.a"
+    endif()
+
+    add_library(crashpad::${name} IMPORTED STATIC GLOBAL)
+    set_target_properties(crashpad::${name}
+        PROPERTIES
+        IMPORTED_LOCATION_RELEASE "${platform_lib}/release/${lib_release}"
+        IMPORTED_LOCATION_DEBUG "${platform_lib}/debug/${lib_debug}"
+        INTERFACE_INCLUDE_DIRECTORIES "${crashpad_include}/crashpad;${crashpad_include}/mini_chromium"
+    )
+
+endforeach()
+
+#[[
+
+add_library(crashpad::common STATIC IMPORTED GLOBAL)
+set_target_properties(crashpad::common PROPERTIES
+    IMPORTED_LOCATION "${_crashpad_common}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/include/crashpad;${CMAKE_CURRENT_LIST_DIR}/include/mini_chromium"
 )
 
-add_library(crashpad::binaries::common STATIC IMPORTED)
-set_target_properties(crashpad::binaries::common PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libcommon.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
+add_library(crashpad::util STATIC IMPORTED GLOBAL)
+set_target_properties(crashpad::util PROPERTIES
+    IMPORTED_LOCATION "${_crashpad_util}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/include/crashpad;${CMAKE_CURRENT_LIST_DIR}/include/mini_chromium"
 )
 
-add_library(crashpad::binaries::util STATIC IMPORTED)
-set_target_properties(crashpad::binaries::util PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libutil.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
+add_library(crashpad::base STATIC IMPORTED GLOBAL)
+set_target_properties(crashpad::base PROPERTIES
+    IMPORTED_LOCATION "${_crashpad_base}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/include/crashpad;${CMAKE_CURRENT_LIST_DIR}/include/mini_chromium"
 )
 
-add_library(crashpad::binaries::mini_chromium::base STATIC IMPORTED)
-set_target_properties(crashpad::binaries::mini_chromium::base PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_base}/lib/${_crashpad_platform}/libbase.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${_crashpad_base}/include"
-)
-
+#]]

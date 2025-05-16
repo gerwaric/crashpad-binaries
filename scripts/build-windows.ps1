@@ -108,8 +108,8 @@ robocopy `
 #=== Install mini_chromium headers ===
 Write-Host "[INFO] Installing headers: mini_chromium/base..."
 robocopy `
-    "$RootDir/build/crashpad/crashpad/third_party/mini_chromium/mini_chromium/base" `
-    "$RootDir/include/mini_chromium/base" `
+    "$RootDir/build/crashpad/crashpad/third_party/mini_chromium/mini_chromium" `
+    "$RootDir/include/mini_chromium" `
     *.h *.hpp /S /PURGE /NFL /NDL /NJH /NJS /NC /NS
 
 #=== Done ===

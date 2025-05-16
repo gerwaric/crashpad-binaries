@@ -61,7 +61,7 @@ foreach(name IN ITEMS client common util base)
         set(lib_debug "MDd/${name}.lib")
     else()
         set(lib_release "lib${name}.a")
-        set(lib_debug "lib${name}.a"
+        set(lib_debug "lib${name}.a")
     endif()
 
     add_library(crashpad::${name} IMPORTED STATIC GLOBAL)

@@ -70,25 +70,3 @@ foreach(name IN ITEMS client common util base)
     )
 
 endforeach()
-
-#[[
-
-add_library(crashpad::common STATIC IMPORTED GLOBAL)
-set_target_properties(crashpad::common PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_common}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/include/crashpad;${CMAKE_CURRENT_LIST_DIR}/include/mini_chromium"
-)
-
-add_library(crashpad::util STATIC IMPORTED GLOBAL)
-set_target_properties(crashpad::util PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_util}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/include/crashpad;${CMAKE_CURRENT_LIST_DIR}/include/mini_chromium"
-)
-
-add_library(crashpad::base STATIC IMPORTED GLOBAL)
-set_target_properties(crashpad::base PROPERTIES
-    IMPORTED_LOCATION "${_crashpad_base}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/include/crashpad;${CMAKE_CURRENT_LIST_DIR}/include/mini_chromium"
-)
-
-#]]

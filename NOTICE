@@ -1,0 +1,6 @@
+This repository distributes precompiled binaries and headers of the Crashpad
+project (https://crashpad.chromium.org/), which is licensed under the
+Apache License, Version 2.0.
+
+Additional build scripts and configuration in this repository are also
+provided under the Apache License, Version 2.0. See LICENSE for details.
